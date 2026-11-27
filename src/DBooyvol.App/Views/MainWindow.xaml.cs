@@ -2,6 +2,7 @@ using System.Data;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using DBooyvol.App.Controls;
 using DBooyvol.App.ViewModels;
@@ -182,6 +183,12 @@ public partial class MainWindow : Window
             e.Column.Header = tab.Header(tab.Columns[index].Info);
             e.Column.MinWidth = 48;
             e.Column.MaxWidth = _vm.Settings.MaxAutoColumnWidth;
+            if (IsNumeric(tab.Columns[index].Info))
+            {
+                var style = new Style(typeof(DataGridCell), (Style)FindResource(typeof(DataGridCell)));
+                style.Setters.Add(new Setter(HorizontalContentAlignmentProperty, HorizontalAlignment.Right));
+                e.Column.CellStyle = style;
+            }
         }
         if (_vm.Settings.AutoColumnWidths)
             e.Column.Width = new DataGridLength(1, DataGridLengthUnitType.Auto);
@@ -190,6 +197,21 @@ public partial class MainWindow : Window
     private void ResultsGrid_LoadingRow(object sender, DataGridRowEventArgs e)
     {
         e.Row.Header = (e.Row.GetIndex() + 1).ToString();
+    }
+
+    private static bool IsNumeric(Core.Models.ColumnInfo info)
+    {
+        var text = (info.ClassName ?? "") + " " + info.Type;
+        return text.Contains("Int", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("Long", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("Short", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("Byte", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("Decimal", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("Numeric", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("Double", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("Float", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("Real", StringComparison.OrdinalIgnoreCase)
+               || text.Contains("Number", StringComparison.OrdinalIgnoreCase);
     }
 
     private void ResultsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -407,5 +429,77 @@ public partial class MainWindow : Window
                 : LogicalTreeHelper.GetParent(node);
         }
         return null;
+    }
+
+    // ------------------------------------------------------------------
+    // Custom title bar
+    // ------------------------------------------------------------------
+
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left) return;
+        if (e.ClickCount == 2)
+        {
+            ToggleMaximize();
+            e.Handled = true;
+            return;
+        }
+        if (WindowState == WindowState.Maximized)
+        {
+            // Restore under the cursor instead of jumping to the old frame.
+            var cursor = e.GetPosition(this);
+            var ratio = cursor.X / Math.Max(1, ActualWidth);
+            WindowState = WindowState.Normal;
+            Left = cursor.X + Left - RestoreBounds.Width * ratio;
+            Top = Math.Max(0, e.GetPosition(this).Y + Top - 16);
+        }
+        try { DragMove(); } catch (InvalidOperationException) { /* button released */ }
+    }
+
+    private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+    private void Maximize_Click(object sender, RoutedEventArgs e) => ToggleMaximize();
+
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void ToggleMaximize() =>
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+
+    private void Window_StateChanged(object? sender, EventArgs e)
+    {
+        if (MaximizeGlyph is null) return;
+        MaximizeGlyph.Text = WindowState == WindowState.Maximized ? "\uE923" : "\uE922";
+        if (MaximizeButton is not null) MaximizeButton.ToolTip = WindowState == WindowState.Maximized ? "Восстановить" : "Развернуть";
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        StateChanged += Window_StateChanged;
+        Window_StateChanged(this, EventArgs.Empty);
+        if (PresentationSource.FromVisual(this) is HwndSource source)
+            source.AddHook(WndProc);
+    }
+
+    private const int WmNcHitTest = 0x0084;
+    private const int HtMaxButton = 9;
+
+    /// <summary>
+    /// WindowChrome with CaptionHeight=0 loses the native maximize button, so
+    /// Win11 Snap Layouts need this hit test over our own button.
+    /// </summary>
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg != WmNcHitTest || MaximizeButton is null || !MaximizeButton.IsVisible) return IntPtr.Zero;
+        var screen = new System.Windows.Point(
+            unchecked((short)((long)lParam & 0xFFFF)),
+            unchecked((short)(((long)lParam >> 16) & 0xFFFF)));
+        var local = MaximizeButton.PointFromScreen(screen);
+        if (local.X >= 0 && local.Y >= 0 && local.X <= MaximizeButton.ActualWidth && local.Y <= MaximizeButton.ActualHeight)
+        {
+            handled = true;
+            return new IntPtr(HtMaxButton);
+        }
+        return IntPtr.Zero;
     }
 }

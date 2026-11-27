@@ -26,6 +26,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <TextBlock Text="Язык интерфейса" VerticalAlignment="Center" Margin="0,0,8,10" />
@@ -61,6 +62,14 @@
                         <CheckBox Content="Проверять внешние изменения файлов" Margin="0,0,0,6"
                                   IsChecked="{Binding CheckExternalChanges}" />
                     </StackPanel>
+
+                    <TextBlock Text="Тема" Grid.Row="7" VerticalAlignment="Center" Margin="0,4,8,10" />
+                    <ComboBox x:Name="ThemeBox" Grid.Row="7" Grid.Column="1" Style="{StaticResource FieldCombo}"
+                              Margin="0,4,0,10" SelectionChanged="Theme_Changed">
+                        <ComboBoxItem Content="Как в системе" Tag="auto" />
+                        <ComboBoxItem Content="Светлая" Tag="light" />
+                        <ComboBoxItem Content="Тёмная" Tag="dark" />
+                    </ComboBox>
                 </Grid>
             </TabItem>
 

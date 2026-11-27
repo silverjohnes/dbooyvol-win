@@ -22,6 +22,7 @@ public partial class App : Application
         try
         {
             var settings = AppSettings.Load();
+            ThemeService.Initialize(settings.Theme);
             L10n.Load(AppPaths.LocalesDirectory, settings.AppLanguage);
 
             var shortcuts = new ShortcutRegistry(settings.ShortcutOverrides);

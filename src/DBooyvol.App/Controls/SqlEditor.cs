@@ -6,7 +6,9 @@ using ICSharpCode.AvalonEdit.CodeCompletion;
 using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Editing;
 using ICSharpCode.AvalonEdit.Highlighting;
+using ICSharpCode.AvalonEdit.Highlighting.Xshd;
 using ICSharpCode.AvalonEdit.Indentation;
+using DBooyvol.App.Services;
 using DBooyvol.Core.Sql;
 
 namespace DBooyvol.App.Controls;
@@ -53,7 +55,7 @@ public sealed class SqlEditor : UserControl
             WordWrap = false,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            FontFamily = new System.Windows.Media.FontFamily("Consolas, Cascadia Mono, Courier New"),
+            FontFamily = new System.Windows.Media.FontFamily("Cascadia Mono, Consolas, Courier New"),
             Options =
             {
                 ConvertTabsToSpaces = true,
@@ -91,7 +93,99 @@ public sealed class SqlEditor : UserControl
         };
         _editor.PreviewKeyDown += EditorPreviewKeyDown;
         Content = _editor;
+        Loaded += (_, _) =>
+        {
+            ThemeService.Changed += ApplyTheme;
+            ApplyTheme();
+        };
+        Unloaded += (_, _) => ThemeService.Changed -= ApplyTheme;
+        ApplyTheme();
     }
+
+    // ------------------------------------------------------------------
+    // Theme
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// AvalonEdit does not consume DynamicResource, so the editor palette is
+    /// pushed by hand and the SQL definition is rebuilt on every theme change.
+    /// </summary>
+    private void ApplyTheme()
+    {
+        _editor.Background = ThemeService.Brush("Brush.Surface");
+        _editor.Foreground = ThemeService.Brush("Brush.EditorText");
+        _editor.LineNumbersForeground = ThemeService.Brush("Brush.TextDisabled");
+        _editor.TextArea.Caret.CaretBrush = ThemeService.Brush("Brush.Text");
+        _editor.TextArea.SelectionBrush = ThemeService.Brush("Brush.EditorSelection");
+        _editor.TextArea.SelectionBorder = null;
+        _editor.TextArea.TextView.CurrentLineBackground = ThemeService.Brush("Brush.EditorCurrentLine");
+        _editor.TextArea.TextView.CurrentLineBorder = null;
+        try
+        {
+            _editor.SyntaxHighlighting = BuildSqlHighlighting();
+        }
+        catch (Exception error)
+        {
+            Services.Log.Error("editor highlighting", error);
+            _editor.SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("SQL");
+        }
+        _editor.TextArea.TextView.Redraw();
+    }
+
+    private static IHighlightingDefinition BuildSqlHighlighting()
+    {
+        string Hex(string key)
+        {
+            var c = ThemeService.Color(key);
+            return $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+        }
+
+        var words = string.Join("", SqlHighlightWords.Select(w => $"<Word>{w}</Word>"));
+        var xshd =
+            "<SyntaxDefinition name=\"SQL\" extensions=\".sql\" " +
+            "xmlns=\"http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008\">" +
+            $"<Color name=\"Comment\" foreground=\"{Hex("Brush.EditorComment")}\" />" +
+            $"<Color name=\"String\" foreground=\"{Hex("Brush.EditorString")}\" />" +
+            $"<Color name=\"Number\" foreground=\"{Hex("Brush.EditorNumber")}\" />" +
+            $"<Color name=\"Keyword\" foreground=\"{Hex("Brush.EditorKeyword")}\" fontWeight=\"bold\" />" +
+            $"<Color name=\"Function\" foreground=\"{Hex("Brush.EditorFunction")}\" />" +
+            "<RuleSet>" +
+            "<Span color=\"Comment\" begin=\"/\\*\" end=\"\\*/\" multiline=\"true\" />" +
+            "<Span color=\"String\" begin=\"'\" end=\"'\" />" +
+            "<Span color=\"String\" begin=\"&quot;\" end=\"&quot;\" />" +
+            "<Rule color=\"Comment\">--.*$</Rule>" +
+            "<Rule color=\"Function\">\\b[A-Za-z_][A-Za-z0-9_$]*(?=\\s*\\()</Rule>" +
+            $"<Keywords color=\"Keyword\" ignoreCase=\"true\">{words}</Keywords>" +
+            "<Rule color=\"Number\">\\b0[xX][0-9a-fA-F]+\\b|\\b\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?\\b</Rule>" +
+            "</RuleSet></SyntaxDefinition>";
+
+        using var reader = System.Xml.XmlReader.Create(new System.IO.StringReader(xshd));
+        return HighlightingLoader.Load(reader, HighlightingManager.Instance);
+    }
+
+    private static readonly string[] SqlHighlightWords =
+    {
+        "select", "from", "where", "and", "or", "not", "in", "exists", "between", "like", "ilike",
+        "is", "null", "as", "on", "join", "left", "right", "full", "inner", "outer", "cross", "natural",
+        "group", "by", "order", "having", "limit", "offset", "fetch", "next", "rows", "only",
+        "union", "all", "intersect", "except", "minus", "distinct", "into", "values", "set",
+        "insert", "update", "delete", "merge", "create", "alter", "drop", "truncate", "table", "view",
+        "index", "sequence", "schema", "database", "grant", "revoke", "commit", "rollback", "begin",
+        "start", "transaction", "with", "recursive", "case", "when", "then", "else", "end", "cast",
+        "asc", "desc", "nulls", "first", "last", "over", "partition", "window", "row", "range",
+        "using", "lateral", "returning", "conflict", "do", "nothing", "default", "primary", "key",
+        "foreign", "references", "constraint", "unique", "check", "cascade", "restrict",
+        "explain", "analyze", "vacuum", "show", "describe", "declare", "cursor", "open", "close",
+        "for", "loop", "while", "if", "elsif", "procedure", "function", "trigger", "package", "body",
+        "type", "subtype", "record", "exception", "raise", "return", "execute", "immediate",
+        "connect", "to", "identified", "password", "session", "role", "tablespace",
+        "timestamp", "date", "interval", "time", "zone", "local", "number", "numeric", "decimal",
+        "varchar", "varchar2", "char", "nchar", "nvarchar2", "text", "clob", "blob", "raw", "bytea",
+        "integer", "int", "smallint", "bigint", "serial", "bigserial", "boolean", "bool", "float",
+        "double", "precision", "real", "uuid", "json", "jsonb", "array", "enum", "domain",
+        "true", "false", "unknown", "nowait", "wait", "skip", "locked", "share", "mode",
+        "parallel", "hint", "materialized", "refresh", "temporary", "temp", "unlogged"
+    };
 
     public Func<IEnumerable<string>>? ExtraCandidates { get; set; }
     public Func<string, IEnumerable<string>>? ValueCandidates { get; set; }

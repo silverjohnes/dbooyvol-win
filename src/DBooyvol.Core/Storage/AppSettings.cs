@@ -29,6 +29,8 @@ public sealed class AppSettings
     public bool CheckExternalChanges { get; set; }
     public string? SelectedProfileId { get; set; }
     public string AppLanguage { get; set; } = "";
+    /// <summary>"auto" follows Windows, otherwise "light" or "dark".</summary>
+    public string Theme { get; set; } = "auto";
 
     public Dictionary<string, List<string>> TreeExpanded { get; set; } = new();
     public List<string> CollapsedConnections { get; set; } = new();
@@ -81,6 +83,7 @@ public sealed class AppSettings
         CommentMarkerSuffix ??= "!#";
         DisplayTimeZone ??= "";
         AppLanguage ??= "";
+        Theme = Theme is "light" or "dark" ? Theme : "auto";
         TreeExpanded ??= new Dictionary<string, List<string>>();
         CollapsedConnections ??= new List<string>();
         ShortcutOverrides ??= new Dictionary<string, string>();

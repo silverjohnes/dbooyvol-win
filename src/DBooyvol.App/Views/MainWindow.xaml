@@ -3,14 +3,24 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:DBooyvol.App.Controls"
         xmlns:vm="clr-namespace:DBooyvol.App.ViewModels"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         Title="DBooyvol" Height="820" Width="1280"
-        WindowStartupLocation="CenterScreen" PreviewKeyDown="Window_PreviewKeyDown">
+        WindowStartupLocation="CenterScreen" PreviewKeyDown="Window_PreviewKeyDown"
+        Background="{DynamicResource Brush.Window}">
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6"
+                            GlassFrameThickness="0" CornerRadius="0"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
 
     <Window.Resources>
         <HierarchicalDataTemplate DataType="{x:Type vm:ConnectionNode}" ItemsSource="{Binding Children}">
-            <StackPanel Orientation="Horizontal" Margin="0,1">
-                <TextBlock Text="{Binding Icon}" Width="16" Foreground="#2E7D32" />
-                <TextBlock Text="{Binding Label}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding Icon}" Width="18" VerticalAlignment="Center"
+                           Foreground="{DynamicResource Brush.TextMuted}" />
+                <TextBlock Text="{Binding Label}" VerticalAlignment="Center">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="FontWeight" Value="Normal" />
@@ -26,17 +36,20 @@
         </HierarchicalDataTemplate>
 
         <DataTemplate x:Key="TabHeader">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
-                <TextBlock Text=" *" Foreground="#B25000" VerticalAlignment="Center"
+            <StackPanel Orientation="Horizontal" Background="Transparent">
+                <TextBlock Text="{Binding Title}" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" MaxWidth="180" />
+                <TextBlock Text="•" Margin="4,0,0,0" FontSize="14" VerticalAlignment="Center"
+                           Foreground="{DynamicResource Brush.Warning}"
                            Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}" />
-                <Button Content="✕" Width="18" Height="18" Margin="8,0,0,0" Padding="0"
-                        FontSize="10" Click="CloseTab_Click" ToolTip="Закрыть вкладку" />
+                <Button Content="✕" Width="18" Height="18" Margin="6,0,-3,0" Padding="0"
+                        FontSize="9" Style="{StaticResource IconButton}"
+                        Click="CloseTab_Click" ToolTip="Закрыть вкладку" />
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate x:Key="TabContent">
-            <Grid Margin="0,4,0,0">
+            <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="3*" MinHeight="120" />
                     <RowDefinition Height="5" />
@@ -59,7 +72,7 @@
                                     NextStatementRequested="Editor_NextStatement" />
 
                 <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"
-                              Background="#E5E5E5" ResizeBehavior="PreviousAndNext" />
+                              Background="Transparent" ResizeBehavior="PreviousAndNext" />
 
                 <Grid Grid.Row="2">
                     <Grid.RowDefinitions>
@@ -67,29 +80,32 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Border Background="#F7F7F7" BorderBrush="#E0E0E0" BorderThickness="0,1,0,1"
-                            Padding="6,3">
+                    <Border Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.Line}"
+                            BorderThickness="0,1,0,1" Padding="8,2">
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                <Button Content="Ещё" Style="{StaticResource ToolButton}"
+                                <Button Content="Ещё" Style="{StaticResource PillButton}"
                                         Click="Action_Click" Tag="result.fetchMore"
                                         ToolTip="Загрузить ещё (Ctrl+Alt+N)" />
-                                <Button Content="Все" Style="{StaticResource ToolButton}"
+                                <Button Content="Все" Style="{StaticResource PillButton}"
                                         Click="Action_Click" Tag="result.fetchAll"
                                         ToolTip="Загрузить все (Ctrl+Shift+=)" />
-                                <Button Content="Применить" Style="{StaticResource ToolButton}"
+                                <Button Content="Применить" Style="{StaticResource PillButton}"
                                         Click="Action_Click" Tag="data.apply"
                                         ToolTip="Сохранить изменения (Ctrl+S)" />
-                                <Button Content="Строка / таблица" Style="{StaticResource ToolButton}"
-                                        Click="Action_Click" Tag="toggleRow"
-                                        ToolTip="Tab" />
-                                <Button Content="Экспорт" Style="{StaticResource ToolButton}"
+                                <Button Content="Строка / таблица" Style="{StaticResource PillButton}"
+                                        Click="Action_Click" Tag="toggleRow" ToolTip="Tab" />
+                                <Button Content="Экспорт" Style="{StaticResource PillButton}"
                                         Click="Action_Click" Tag="result.exportMenu" />
                             </StackPanel>
                             <TextBlock Text="{Binding Status}" VerticalAlignment="Center"
-                                       Foreground="#444444" TextTrimming="CharacterEllipsis" />
+                                       Foreground="{DynamicResource Brush.TextMuted}"
+                                       FontSize="{DynamicResource Size.FontSmall}"
+                                       TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding Error}" Margin="12,0,0,0" VerticalAlignment="Center"
-                                       Foreground="#B00020" TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource Brush.Danger}"
+                                       FontSize="{DynamicResource Size.FontSmall}"
+                                       TextTrimming="CharacterEllipsis"
                                        Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
                         </DockPanel>
                     </Border>
@@ -107,9 +123,7 @@
                                   SelectionMode="Extended"
                                   SelectionUnit="FullRow"
                                   HeadersVisibility="All"
-                                  RowHeaderWidth="48"
-                                  GridLinesVisibility="Horizontal"
-                                  HorizontalGridLinesBrush="#EEEEEE"
+                                  RowHeaderWidth="46"
                                   FontSize="{Binding DataContext.ResultFontSize, RelativeSource={RelativeSource AncestorType=Window}}"
                                   Visibility="{Binding IsGridVisible, Converter={StaticResource BoolToVis}}"
                                   SelectionChanged="ResultsGrid_SelectionChanged"
@@ -154,10 +168,11 @@
                                                            TextWrapping="NoWrap">
                                                     <TextBlock.Style>
                                                         <Style TargetType="TextBlock">
-                                                            <Setter Property="Foreground" Value="#222222" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}" />
                                                             <Style.Triggers>
                                                                 <DataTrigger Binding="{Binding Value}" Value="{x:Null}">
-                                                                    <Setter Property="Foreground" Value="#999999" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource Brush.TextDisabled}" />
+                                                                    <Setter Property="FontStyle" Value="Italic" />
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
@@ -176,152 +191,211 @@
     </Window.Resources>
 
     <DockPanel>
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="Файл">
-                <MenuItem Header="Новый скрипт" Tag="file.newScript" Click="Action_Click" InputGestureText="Ctrl+]" />
-                <MenuItem Header="Открыть…" Tag="file.open" Click="Action_Click" InputGestureText="Ctrl+O" />
-                <MenuItem Header="Сохранить" Tag="file.save" Click="Action_Click" InputGestureText="Ctrl+S" />
-                <MenuItem Header="Сохранить как…" Tag="file.saveAs" Click="Action_Click" InputGestureText="Ctrl+Shift+S" />
-                <Separator />
-                <MenuItem Header="Экспорт CSV…" Tag="result.exportCsv" Click="Action_Click" InputGestureText="Ctrl+Alt+1" />
-                <MenuItem Header="Экспорт XML…" Tag="result.exportXml" Click="Action_Click" InputGestureText="Ctrl+Alt+2" />
-                <MenuItem Header="Экспорт XLSX…" Tag="result.exportXlsx" Click="Action_Click" InputGestureText="Ctrl+Alt+3" />
-                <Separator />
-                <MenuItem Header="Выход" Click="Exit_Click" />
-            </MenuItem>
 
-            <MenuItem Header="Правка">
-                <MenuItem Header="Найти" Tag="edit.find" Click="Action_Click" InputGestureText="Ctrl+F" />
-                <MenuItem Header="Комментировать" Tag="edit.comment" Click="Action_Click" InputGestureText="Ctrl+/" />
-                <MenuItem Header="Комментировать по маркеру" Tag="edit.commentMarker" Click="Action_Click" InputGestureText="Ctrl+Alt+/" />
-                <MenuItem Header="Форматировать SQL" Tag="sql.format" Click="Action_Click" InputGestureText="Ctrl+Shift+F" />
-                <MenuItem Header="Автодополнение" Tag="sql.completion" Click="Action_Click" InputGestureText="Ctrl+Space" />
-            </MenuItem>
+        <!-- ============================================================
+             Title bar: menu, run cluster, window buttons
+             ============================================================ -->
+        <Grid DockPanel.Dock="Top" Height="38" Background="{DynamicResource Brush.Chrome}"
+              x:Name="TitleBar" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-            <MenuItem Header="SQL">
-                <MenuItem Header="Выполнить" Tag="sql.executeStatement" Click="Action_Click" InputGestureText="Ctrl+Enter" />
-                <MenuItem Header="Выполнить весь скрипт" Tag="sql.executeScript" Click="Action_Click" InputGestureText="Alt+X" />
-                <MenuItem Header="Отменить запрос" Tag="sql.cancel" Click="Action_Click" InputGestureText="Ctrl+Shift+C" />
-                <Separator />
-                <MenuItem Header="Загрузить ещё" Tag="result.fetchMore" Click="Action_Click" InputGestureText="Ctrl+Alt+N" />
-                <MenuItem Header="Загрузить все" Tag="result.fetchAll" Click="Action_Click" InputGestureText="Ctrl+Shift+=" />
-                <MenuItem Header="Сохранить изменения" Tag="data.apply" Click="Action_Click" InputGestureText="Ctrl+S" />
-            </MenuItem>
+            <TextBlock Text="◧" FontSize="17" Margin="12,0,6,0" VerticalAlignment="Center"
+                       Foreground="{DynamicResource Brush.Accent}" ToolTip="DBooyvol" />
 
-            <MenuItem Header="Подключение">
-                <MenuItem Header="Новое подключение…" Tag="file.newConnection" Click="Action_Click" InputGestureText="Ctrl+Shift+N" />
-                <MenuItem Header="Изменить…" Tag="connection.change" Click="Action_Click" InputGestureText="Ctrl+9" />
-                <MenuItem Header="Удалить" Tag="connection.delete" Click="Action_Click" />
-                <Separator />
-                <MenuItem Header="Подключиться" Tag="connection.connect" Click="Action_Click" InputGestureText="Alt+C" />
-                <MenuItem Header="Отключиться" Tag="connection.disconnect" Click="Action_Click" InputGestureText="Alt+D" />
-                <MenuItem Header="Обновить дерево" Tag="tree.refresh" Click="Action_Click" InputGestureText="F5" />
-            </MenuItem>
+            <Menu Grid.Column="1" VerticalAlignment="Center" Background="Transparent">
+                <MenuItem Header="Файл">
+                    <MenuItem Header="Новый скрипт" Tag="file.newScript" Click="Action_Click" InputGestureText="Ctrl+]" />
+                    <MenuItem Header="Открыть…" Tag="file.open" Click="Action_Click" InputGestureText="Ctrl+O" />
+                    <MenuItem Header="Сохранить" Tag="file.save" Click="Action_Click" InputGestureText="Ctrl+S" />
+                    <MenuItem Header="Сохранить как…" Tag="file.saveAs" Click="Action_Click" InputGestureText="Ctrl+Shift+S" />
+                    <Separator />
+                    <MenuItem Header="Экспорт CSV…" Tag="result.exportCsv" Click="Action_Click" InputGestureText="Ctrl+Alt+1" />
+                    <MenuItem Header="Экспорт XML…" Tag="result.exportXml" Click="Action_Click" InputGestureText="Ctrl+Alt+2" />
+                    <MenuItem Header="Экспорт XLSX…" Tag="result.exportXlsx" Click="Action_Click" InputGestureText="Ctrl+Alt+3" />
+                    <Separator />
+                    <MenuItem Header="Выход" Click="Exit_Click" />
+                </MenuItem>
 
-            <MenuItem Header="Вид">
-                <MenuItem Header="История запросов" Tag="view.history" Click="Action_Click" InputGestureText="Alt+2" />
-                <MenuItem Header="Результат" Tag="view.results" Click="Action_Click" InputGestureText="Ctrl+6" />
-                <MenuItem Header="Настройки…" Tag="settings" Click="Action_Click" />
-                <MenuItem Header="Горячие клавиши…" Tag="help.shortcuts" Click="Action_Click" InputGestureText="F1" />
-                <MenuItem Header="Во весь экран" Tag="view.fullscreen" Click="Action_Click" InputGestureText="F11" />
-            </MenuItem>
-        </Menu>
+                <MenuItem Header="Правка">
+                    <MenuItem Header="Найти" Tag="edit.find" Click="Action_Click" InputGestureText="Ctrl+F" />
+                    <MenuItem Header="Комментировать" Tag="edit.comment" Click="Action_Click" InputGestureText="Ctrl+/" />
+                    <MenuItem Header="Комментировать по маркеру" Tag="edit.commentMarker" Click="Action_Click" InputGestureText="Ctrl+Alt+/" />
+                    <MenuItem Header="Форматировать SQL" Tag="sql.format" Click="Action_Click" InputGestureText="Ctrl+Shift+F" />
+                    <MenuItem Header="Автодополнение" Tag="sql.completion" Click="Action_Click" InputGestureText="Ctrl+Space" />
+                </MenuItem>
 
-        <ToolBarTray DockPanel.Dock="Top">
-            <ToolBar>
-                <Button Content="Выполнить" Tag="sql.executeStatement" Click="Action_Click"
+                <MenuItem Header="SQL">
+                    <MenuItem Header="Выполнить" Tag="sql.executeStatement" Click="Action_Click" InputGestureText="Ctrl+Enter" />
+                    <MenuItem Header="Выполнить весь скрипт" Tag="sql.executeScript" Click="Action_Click" InputGestureText="Alt+X" />
+                    <MenuItem Header="Отменить запрос" Tag="sql.cancel" Click="Action_Click" InputGestureText="Ctrl+Shift+C" />
+                    <Separator />
+                    <MenuItem Header="Загрузить ещё" Tag="result.fetchMore" Click="Action_Click" InputGestureText="Ctrl+Alt+N" />
+                    <MenuItem Header="Загрузить все" Tag="result.fetchAll" Click="Action_Click" InputGestureText="Ctrl+Shift+=" />
+                    <MenuItem Header="Сохранить изменения" Tag="data.apply" Click="Action_Click" InputGestureText="Ctrl+S" />
+                </MenuItem>
+
+                <MenuItem Header="Подключение">
+                    <MenuItem Header="Новое подключение…" Tag="file.newConnection" Click="Action_Click" InputGestureText="Ctrl+Shift+N" />
+                    <MenuItem Header="Редактировать…" Tag="connection.change" Click="Action_Click" InputGestureText="F9" />
+                    <MenuItem Header="Удалить" Tag="connection.delete" Click="Action_Click" />
+                    <Separator />
+                    <MenuItem Header="Подключиться" Tag="connection.connect" Click="Action_Click" InputGestureText="Alt+C" />
+                    <MenuItem Header="Отключиться" Tag="connection.disconnect" Click="Action_Click" InputGestureText="Alt+D" />
+                    <MenuItem Header="Обновить дерево" Tag="tree.refresh" Click="Action_Click" InputGestureText="F5" />
+                </MenuItem>
+
+                <MenuItem Header="Вид">
+                    <MenuItem Header="История запросов" Tag="view.history" Click="Action_Click" InputGestureText="Alt+2" />
+                    <MenuItem Header="Результат" Tag="view.results" Click="Action_Click" InputGestureText="Ctrl+6" />
+                    <MenuItem Header="Настройки…" Tag="settings" Click="Action_Click" />
+                    <MenuItem Header="Горячие клавиши…" Tag="help.shortcuts" Click="Action_Click" InputGestureText="F1" />
+                    <MenuItem Header="Во весь экран" Tag="view.fullscreen" Click="Action_Click" InputGestureText="F11" />
+                </MenuItem>
+            </Menu>
+
+            <!-- Run cluster: the accent action is always reachable from the title bar. -->
+            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
+                <Button Content="▶  Выполнить" Style="{StaticResource AccentButton}" Height="26"
+                        Padding="12,3" Margin="0,0,4,0" Click="Action_Click" Tag="sql.executeStatement"
                         ToolTip="Выполнить выделение или statement под курсором (Ctrl+Enter)" />
-                <Button Content="Скрипт" Tag="sql.executeScript" Click="Action_Click"
+                <Button Content="Скрипт" Style="{StaticResource PillButton}" Height="26"
+                        Click="Action_Click" Tag="sql.executeScript"
                         ToolTip="Выполнить весь скрипт (Alt+X)" />
-                <Button Content="Стоп" Tag="sql.cancel" Click="Action_Click"
-                        ToolTip="Отменить запрос (Ctrl+Shift+C)" />
-                <Separator />
-                <Button Content="Формат" Tag="sql.format" Click="Action_Click"
-                        ToolTip="Форматировать SQL (Ctrl+Shift+F)" />
-                <Button Content="Комментарий" Tag="edit.comment" Click="Action_Click"
-                        ToolTip="Ctrl+/" />
-                <Separator />
-                <Button Content="Новая вкладка" Tag="tab.newQuery" Click="Action_Click"
-                        ToolTip="Ctrl+T" />
-                <Button Content="Подключиться" Tag="connection.connect" Click="Action_Click"
-                        ToolTip="Alt+C" />
-                <Button Content="История" Tag="view.history" Click="Action_Click"
-                        ToolTip="Alt+2" />
-            </ToolBar>
-        </ToolBarTray>
+                <Button Content="■" Style="{StaticResource IconButton}" Width="26" Height="26"
+                        Click="Action_Click" Tag="sql.cancel" ToolTip="Отменить запрос (Ctrl+Shift+C)" />
+                <Border Width="1" Height="18" Margin="6,0" Background="{DynamicResource Brush.Line}" />
+                <Button Content="Формат" Style="{StaticResource PillButton}" Height="26"
+                        Click="Action_Click" Tag="sql.format" ToolTip="Форматировать SQL (Ctrl+Shift+F)" />
+                <Button Content="+" Style="{StaticResource IconButton}" Width="26" Height="26"
+                        Click="Action_Click" Tag="tab.newQuery" ToolTip="Новая вкладка (Ctrl+T)" />
+                <Button Content="⏱" Style="{StaticResource IconButton}" Width="26" Height="26"
+                        Click="Action_Click" Tag="view.history" ToolTip="История запросов (Alt+2)" />
+            </StackPanel>
 
-        <StatusBar DockPanel.Dock="Bottom">
-            <StatusBarItem>
-                <TextBlock Text="{Binding ConnectionStatus}" />
-            </StatusBarItem>
-            <Separator />
-            <StatusBarItem>
-                <TextBlock Text="{Binding StatusText}" />
-            </StatusBarItem>
-            <StatusBarItem HorizontalAlignment="Right">
-                <StackPanel Orientation="Horizontal">
-                    <ProgressBar Width="110" Height="12" IsIndeterminate="True" Margin="0,0,10,0"
-                                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
-                    <TextBlock Text="{Binding TimeZoneCode}" Foreground="#666666" />
-                </StackPanel>
-            </StatusBarItem>
-        </StatusBar>
+            <StackPanel Grid.Column="4" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
+                <Button x:Name="MinimizeButton" Style="{StaticResource CaptionButton}" Click="Minimize_Click">
+                    <TextBlock Text="&#xE921;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10" />
+                </Button>
+                <Button x:Name="MaximizeButton" Style="{StaticResource CaptionButton}" Click="Maximize_Click">
+                    <TextBlock x:Name="MaximizeGlyph" Text="&#xE922;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10" />
+                </Button>
+                <Button Style="{StaticResource CloseCaptionButton}" Click="Close_Click">
+                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10" />
+                </Button>
+            </StackPanel>
+        </Grid>
 
+        <!-- ============================================================
+             Bottom status strip
+             ============================================================ -->
+        <Border DockPanel.Dock="Bottom" Height="26" Background="{DynamicResource Brush.Chrome}"
+                BorderBrush="{DynamicResource Brush.Line}" BorderThickness="0,1,0,0" Padding="10,0">
+            <DockPanel LastChildFill="False">
+                <Ellipse DockPanel.Dock="Left" Width="7" Height="7" VerticalAlignment="Center"
+                         Margin="0,0,7,0" Fill="{DynamicResource Brush.Success}" />
+                <TextBlock DockPanel.Dock="Left" Text="{Binding ConnectionStatus}" VerticalAlignment="Center"
+                           FontSize="{DynamicResource Size.FontSmall}"
+                           Foreground="{DynamicResource Brush.TextMuted}" />
+                <TextBlock DockPanel.Dock="Left" Text="{Binding StatusText}" Margin="16,0,0,0"
+                           VerticalAlignment="Center" FontSize="{DynamicResource Size.FontSmall}"
+                           Foreground="{DynamicResource Brush.TextMuted}"
+                           TextTrimming="CharacterEllipsis" MaxWidth="620" />
+                <ProgressBar DockPanel.Dock="Right" Width="90" Height="3" IsIndeterminate="True"
+                             Margin="10,0" VerticalAlignment="Center"
+                             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+                <TextBlock DockPanel.Dock="Right" Text="{Binding TimeZoneCode}" VerticalAlignment="Center"
+                           FontSize="{DynamicResource Size.FontSmall}"
+                           Foreground="{DynamicResource Brush.TextDisabled}" />
+            </DockPanel>
+        </Border>
+
+        <!-- ============================================================
+             Body: sidebar, splitter, editor + results
+             ============================================================ -->
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="260" MinWidth="190" MaxWidth="420" />
-                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="1" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <DockPanel Grid.Column="0" Background="#FAFAFA">
-                <Border DockPanel.Dock="Top" Padding="8,6" Background="#F0F0F0">
+            <DockPanel Grid.Column="0" Background="{DynamicResource Brush.Sidebar}">
+                <Border DockPanel.Dock="Top" Padding="10,7,6,5">
                     <DockPanel>
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                            <Button Content="+" Width="24" Padding="0" Click="Action_Click"
+                            <Button Content="&#xE710;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                    Style="{StaticResource IconButton}" Click="Action_Click"
                                     Tag="file.newConnection" ToolTip="Новое подключение" />
-                            <Button Content="✎" Width="24" Padding="0" Click="Action_Click"
-                                    Tag="connection.change" ToolTip="Изменить" />
-                            <Button Content="⟳" Width="24" Padding="0" Click="Action_Click"
+                            <Button Content="&#xE70F;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                    Style="{StaticResource IconButton}" Click="Action_Click"
+                                    Tag="connection.change" ToolTip="Редактировать (F9)" />
+                            <Button Content="&#xE72C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                    Style="{StaticResource IconButton}" Click="Action_Click"
                                     Tag="tree.refresh" ToolTip="Обновить (F5)" />
                         </StackPanel>
-                        <TextBlock Text="Подключения" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <TextBlock Text="Подключения" FontWeight="SemiBold" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource Brush.Text}" />
                     </DockPanel>
                 </Border>
 
-                <TreeView ItemsSource="{Binding Connections}"
-                          SelectedItemChanged="Tree_SelectedItemChanged"
-                          MouseDoubleClick="Tree_MouseDoubleClick"
-                          PreviewMouseRightButtonDown="Tree_PreviewMouseRightButtonDown"
-                          BorderThickness="0" Background="Transparent">
-                    <TreeView.ContextMenu>
-                        <ContextMenu x:Name="TreeMenu">
-                            <MenuItem Header="Открыть" Tag="object.open" Click="Action_Click" />
-                            <MenuItem Header="Подключиться" Tag="connection.connect" Click="Action_Click" />
-                            <MenuItem Header="Отключиться" Tag="connection.disconnect" Click="Action_Click" />
-                            <Separator />
-                            <MenuItem Header="Изменить…" Tag="connection.change" Click="Action_Click" />
-                            <MenuItem Header="Переименовать…" Tag="connection.rename" Click="Action_Click" />
-                            <MenuItem Header="Дублировать" Tag="connection.duplicate" Click="Action_Click" />
-                            <MenuItem Header="Удалить" Tag="connection.delete" Click="Action_Click" />
-                            <Separator />
-                            <MenuItem Header="Обновить" Tag="tree.refresh" Click="Action_Click" />
-                        </ContextMenu>
-                    </TreeView.ContextMenu>
-                    <TreeView.ItemContainerStyle>
-                        <Style TargetType="TreeViewItem">
-                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
-                            <Setter Property="Padding" Value="2,1" />
-                        </Style>
-                    </TreeView.ItemContainerStyle>
-                </TreeView>
+                <Grid>
+                    <TreeView ItemsSource="{Binding Connections}"
+                              SelectedItemChanged="Tree_SelectedItemChanged"
+                              MouseDoubleClick="Tree_MouseDoubleClick"
+                              PreviewMouseRightButtonDown="Tree_PreviewMouseRightButtonDown"
+                              BorderThickness="0" Background="Transparent" Padding="4,0,4,4">
+                        <TreeView.ContextMenu>
+                            <ContextMenu x:Name="TreeMenu">
+                                <MenuItem Header="Подключиться" Tag="connection.connect" Click="Action_Click" />
+                                <MenuItem Header="Отключиться" Tag="connection.disconnect" Click="Action_Click" />
+                                <Separator />
+                                <MenuItem Header="Редактировать" Tag="connection.change" Click="Action_Click" />
+                                <MenuItem Header="Переименовать…" Tag="connection.rename" Click="Action_Click" />
+                                <MenuItem Header="Дублировать" Tag="connection.duplicate" Click="Action_Click" />
+                                <MenuItem Header="Удалить" Tag="connection.delete" Click="Action_Click" />
+                                <Separator />
+                                <MenuItem Header="Обновить" Tag="tree.refresh" Click="Action_Click" />
+                            </ContextMenu>
+                        </TreeView.ContextMenu>
+                        <TreeView.ItemContainerStyle>
+                            <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
+                                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                                <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                                <Setter Property="Padding" Value="2,1" />
+                            </Style>
+                        </TreeView.ItemContainerStyle>
+                    </TreeView>
+
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Connections.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <TextBlock Text="◧" FontSize="24" HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource Brush.TextDisabled}" />
+                        <TextBlock Text="Нет подключений" Margin="0,6,0,2" HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource Brush.TextMuted}" />
+                        <TextBlock Text="Ctrl+Shift+N" HorizontalAlignment="Center" FontSize="10"
+                                   Foreground="{DynamicResource Brush.TextDisabled}" />
+                    </StackPanel>
+                </Grid>
             </DockPanel>
 
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
-                          Background="#E5E5E5" ResizeBehavior="PreviousAndNext" />
+            <Border Grid.Column="1" Background="{DynamicResource Brush.Line}" />
 
-            <TabControl x:Name="MainTabs" Grid.Column="2" Margin="6,6,6,0"
+            <TabControl x:Name="MainTabs" Grid.Column="2"
                         ItemsSource="{Binding Tabs}"
                         SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
                         ItemTemplate="{StaticResource TabHeader}"

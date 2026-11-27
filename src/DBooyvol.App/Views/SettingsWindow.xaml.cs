@@ -1,4 +1,5 @@
 using System.Windows;
+using DBooyvol.App.Services;
 using DBooyvol.Core.Localization;
 using DBooyvol.Core.Shortcuts;
 using DBooyvol.Core.Storage;
@@ -12,6 +13,7 @@ public partial class SettingsWindow : Window
 {
     private readonly AppSettings _settings;
     private readonly ShortcutRegistry? _shortcuts;
+    private bool _ready;
 
     public SettingsWindow(AppSettings settings, ShortcutRegistry? shortcuts = null)
     {
@@ -29,6 +31,25 @@ public partial class SettingsWindow : Window
         zones.AddRange(TimeZoneCatalog.All());
         TimeZoneBox.ItemsSource = zones;
         TimeZoneBox.SelectedValue = settings.DisplayTimeZone;
+
+        foreach (var item in ThemeBox.Items.OfType<System.Windows.Controls.ComboBoxItem>())
+        {
+            if ((item.Tag as string) == settings.Theme)
+            {
+                ThemeBox.SelectedItem = item;
+                break;
+            }
+        }
+        ThemeBox.SelectedItem ??= ThemeBox.Items[0];
+        _ready = true;
+    }
+
+    private void Theme_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (!_ready) return;
+        var mode = (ThemeBox.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag as string ?? "auto";
+        _settings.Theme = mode;
+        ThemeService.SetMode(mode);
     }
 
     private void Ok_Click(object sender, RoutedEventArgs e)
