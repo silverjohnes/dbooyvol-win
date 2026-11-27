@@ -26,23 +26,29 @@ public class SastTests
     {
         var files = Repository.SourceFiles();
         Assert.True(files.Count >= 30, $"Просканировано слишком мало файлов: {files.Count}");
-        foreach (var extension in new[] { ".cs", ".java", ".ps1", ".sh", ".iss", ".yml" })
+
+        // .yml встречается только в CI, поэтому в ZIP-экспорте без .github его нет.
+        var hasCi = Repository.Exists(".github/workflows/build.yml");
+        var extensions = hasCi
+            ? new[] { ".cs", ".java", ".ps1", ".sh", ".iss", ".yml" }
+            : new[] { ".cs", ".java", ".ps1", ".sh", ".iss" };
+        foreach (var extension in extensions)
             Assert.Contains(files, f => f.Path.EndsWith(extension, StringComparison.OrdinalIgnoreCase));
 
-        foreach (var required in new[]
-                 {
-                     "src/DBooyvol.Core/Protocol/SidecarClient.cs",
-                     "src/DBooyvol.Core/Storage/SecretStore.cs",
-                     "src/DBooyvol.App/Services/Platform.cs",
-                     "sidecar/src/main/java/silver/dbooyvol/Engine.java",
-                     "sidecar/build.ps1",
-                     "sidecar/build.sh",
-                     "installer/DBooyvol.iss",
-                     ".github/workflows/build.yml"
-                 })
+        var required = new List<string>
         {
-            Assert.Contains(files, f => f.Path == required);
-        }
+            "src/DBooyvol.Core/Protocol/SidecarClient.cs",
+            "src/DBooyvol.Core/Storage/SecretStore.cs",
+            "src/DBooyvol.App/Services/Platform.cs",
+            "sidecar/src/main/java/silver/dbooyvol/Engine.java",
+            "sidecar/build.ps1",
+            "sidecar/build.sh",
+            "installer/DBooyvol.iss"
+        };
+        if (hasCi) required.Add(".github/workflows/build.yml");
+
+        foreach (var path in required)
+            Assert.Contains(files, f => f.Path == path);
 
         Assert.DoesNotContain(files, f =>
             f.Path.Contains("/bin/", StringComparison.OrdinalIgnoreCase)
@@ -195,8 +201,14 @@ public class SastTests
     [Fact]
     public void Ci_runs_the_security_gate()
     {
-        Assert.True(Repository.Exists(".github/workflows/build.yml"),
-            "CI workflow отсутствует");
+        if (!Repository.Exists(".github/workflows/build.yml"))
+        {
+            // В git-чекауте workflow обязан быть; в ZIP-экспорте его может не быть.
+            Assert.False(Repository.IsGitCheckout,
+                "CI workflow отсутствует в git-чекауте: .github/workflows/build.yml");
+            return;
+        }
+
         var workflow = Repository.Read(".github/workflows/build.yml");
         Assert.Contains("DBooyvol.Security.Tests", workflow, StringComparison.Ordinal);
         Assert.Contains("dotnet test", workflow, StringComparison.Ordinal);

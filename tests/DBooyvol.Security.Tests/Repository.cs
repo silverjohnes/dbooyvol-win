@@ -43,6 +43,12 @@ public static class Repository
         return files.OrderBy(f => f.Item1, StringComparer.Ordinal).ToList();
     }
 
+    /// <summary>
+    /// True for a real git checkout. A ZIP export has no <c>.git</c> and may
+    /// legitimately miss dot-directories such as <c>.github</c>.
+    /// </summary>
+    public static bool IsGitCheckout => Directory.Exists(Path.Combine(Root, ".git"));
+
     public static string Read(string relativePath) =>
         File.ReadAllText(Path.Combine(Root, relativePath.Replace('/', Path.DirectorySeparatorChar)));
 

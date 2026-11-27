@@ -23,5 +23,6 @@
     <None Include="../../drivers/*.jar" LinkBase="drivers" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../sidecar/build/sidecar.jar" Link="sidecar.jar" CopyToOutputDirectory="PreserveNewest" Condition="Exists('../../sidecar/build/sidecar.jar')" />
     <None Include="../../drivers/sidecar.jar" Link="sidecar.jar" CopyToOutputDirectory="PreserveNewest" Condition="!Exists('../../sidecar/build/sidecar.jar')" />
+    <None Include="../../runtime/jre/**/*" Link="runtime/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Condition="Exists('../../runtime/jre')" />
   </ItemGroup>
 </Project>
