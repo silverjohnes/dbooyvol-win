@@ -1,0 +1,164 @@
+<Window x:Class="DBooyvol.App.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Настройки" Width="620" Height="640"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <DockPanel Margin="16">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Margin="0,12,0,0">
+            <Button Content="Горячие клавиши…" Width="150" Click="Shortcuts_Click" Margin="0,0,8,0" />
+            <Button Content="OK" Width="90" IsDefault="True" Click="Ok_Click" Margin="0,0,8,0" />
+            <Button Content="Отмена" Width="90" IsCancel="True" />
+        </StackPanel>
+
+        <TabControl>
+            <TabItem Header="Общие">
+                <Grid Margin="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="210" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Язык интерфейса" VerticalAlignment="Center" Margin="0,0,8,10" />
+                    <ComboBox x:Name="LanguageBox" Grid.Column="1" Style="{StaticResource FieldCombo}"
+                              DisplayMemberPath="Name" SelectedValuePath="Code" />
+
+                    <TextBlock Text="Часовой пояс" Grid.Row="1" VerticalAlignment="Center" Margin="0,0,8,10" />
+                    <ComboBox x:Name="TimeZoneBox" Grid.Row="1" Grid.Column="1" Style="{StaticResource FieldCombo}"
+                              DisplayMemberPath="Title" SelectedValuePath="Id" />
+
+                    <TextBlock Text="Строк на страницу" Grid.Row="2" VerticalAlignment="Center" Margin="0,0,8,10" />
+                    <TextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource Field}"
+                             Text="{Binding PageSize, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Text="История, дней (0 = без ограничения)" Grid.Row="3"
+                               VerticalAlignment="Center" Margin="0,0,8,10" />
+                    <TextBox Grid.Row="3" Grid.Column="1" Style="{StaticResource Field}"
+                             Text="{Binding HistoryRetentionDays, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Text="Каталог SSH" Grid.Row="4" VerticalAlignment="Center" Margin="0,0,8,10" />
+                    <TextBox Grid.Row="4" Grid.Column="1" Style="{StaticResource Field}"
+                             Text="{Binding SshDirectory, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="Пусто = ~/.ssh" />
+
+                    <TextBlock Text="Java (java.exe)" Grid.Row="5" VerticalAlignment="Center" Margin="0,0,8,10" />
+                    <TextBox Grid.Row="5" Grid.Column="1" Style="{StaticResource Field}"
+                             Text="{Binding JavaPath, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="Пусто = встроенный jlink runtime, затем PATH" />
+
+                    <StackPanel Grid.Row="6" Grid.Column="1">
+                        <CheckBox Content="Автосохранение вкладок" Margin="0,0,0,6"
+                                  IsChecked="{Binding AutosaveTabs}" />
+                        <CheckBox Content="Проверять внешние изменения файлов" Margin="0,0,0,6"
+                                  IsChecked="{Binding CheckExternalChanges}" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Редактор">
+                <Grid Margin="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="210" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Размер шрифта" VerticalAlignment="Center" Margin="0,0,8,10" />
+                    <TextBox Grid.Column="1" Style="{StaticResource Field}"
+                             Text="{Binding EditorFontSize, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <CheckBox Grid.Row="1" Grid.Column="1" Content="Умное выделение (слово/литерал/скобки)"
+                              Margin="0,0,0,8" IsChecked="{Binding SmartSelection}" />
+
+                    <CheckBox Grid.Row="2" Grid.Column="1" Content="Только в поиске"
+                              Margin="0,0,0,8" IsChecked="{Binding SmartSelectionOnlyInSearch}" />
+
+                    <CheckBox Grid.Row="3" Grid.Column="1" Content="Комментарий по маркеру строки"
+                              Margin="0,0,0,8" IsChecked="{Binding CommentByMarker}" />
+
+                    <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal">
+                        <TextBlock Text="Маркер:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBox Width="80" Style="{StaticResource Field}"
+                                 Text="{Binding CommentMarkerSuffix, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Результаты">
+                <Grid Margin="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="210" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Шрифт результатов" VerticalAlignment="Center" Margin="0,0,8,10" />
+                    <TextBox Grid.Column="1" Style="{StaticResource Field}"
+                             Text="{Binding ResultFontSize, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Text="Макс. ширина колонки" Grid.Row="1" VerticalAlignment="Center" Margin="0,0,8,10" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Style="{StaticResource Field}"
+                             Text="{Binding MaxAutoColumnWidth, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <StackPanel Grid.Row="2" Grid.Column="1">
+                        <CheckBox Content="Автоширина колонок" Margin="0,0,0,6"
+                                  IsChecked="{Binding AutoColumnWidths}" />
+                        <CheckBox Content="Показывать тип в заголовке колонки" Margin="0,0,0,6"
+                                  IsChecked="{Binding ShowTypeInColumnHeader}" />
+                        <CheckBox Content="Показывать тип при наведении" Margin="0,0,0,6"
+                                  IsChecked="{Binding ShowTypeOnHeaderHover}" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Форматтер SQL">
+                <Grid Margin="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="210" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Отступ" VerticalAlignment="Center" Margin="0,0,8,10" />
+                    <TextBox Grid.Column="1" Style="{StaticResource Field}"
+                             Text="{Binding FormatterIndent, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Text="Макс. ширина строки" Grid.Row="1" VerticalAlignment="Center" Margin="0,0,8,10" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Style="{StaticResource Field}"
+                             Text="{Binding FormatterMaxWidth, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <CheckBox Grid.Row="2" Grid.Column="1" Content="Ключевые слова заглавными"
+                              Margin="0,0,0,8" IsChecked="{Binding FormatterUppercaseKeywords}" />
+
+                    <CheckBox Grid.Row="3" Grid.Column="1" Content="Запятая в начале строки"
+                              Margin="0,0,0,8" IsChecked="{Binding FormatterCommaFirst}" />
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

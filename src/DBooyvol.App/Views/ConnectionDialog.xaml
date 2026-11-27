@@ -1,0 +1,192 @@
+<Window x:Class="DBooyvol.App.Views.ConnectionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Подключение" Width="560" Height="720"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <DockPanel Margin="16">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Margin="0,12,0,0">
+            <Button Content="Сохранить" Width="110" IsDefault="True" Click="Ok_Click" Margin="0,0,8,0" />
+            <Button Content="Отмена" Width="90" IsCancel="True" />
+        </StackPanel>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="Общие" FontWeight="SemiBold" Margin="0,0,0,8" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Название" VerticalAlignment="Center" Margin="0,0,8,8" />
+                    <TextBox x:Name="NameBox" Grid.Column="1" Style="{StaticResource Field}" />
+
+                    <TextBlock Text="Тип базы" Grid.Row="1" VerticalAlignment="Center" Margin="0,0,8,8" />
+                    <ComboBox x:Name="KindBox" Grid.Row="1" Grid.Column="1" Style="{StaticResource FieldCombo}"
+                              SelectionChanged="Kind_Changed">
+                        <ComboBoxItem Content="PostgreSQL" Tag="postgres" />
+                        <ComboBoxItem Content="Oracle" Tag="oracle" />
+                        <ComboBoxItem Content="ClickHouse" Tag="clickhouse" />
+                        <ComboBoxItem Content="SQLite" Tag="sqlite" />
+                    </ComboBox>
+                </Grid>
+
+                <StackPanel x:Name="NetworkPanel">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="90" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Хост" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <TextBox x:Name="HostBox" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource Field}" />
+
+                        <TextBlock Text="Порт" Grid.Row="1" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <TextBox x:Name="PortBox" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Style="{StaticResource Field}" />
+
+                        <TextBlock Text="База / SID / сервис" Grid.Row="2" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <TextBox x:Name="DatabaseBox" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Style="{StaticResource Field}" />
+
+                        <TextBlock Text="Пользователь" Grid.Row="3" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <TextBox x:Name="UserBox" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Style="{StaticResource Field}" />
+
+                        <TextBlock Text="JDBC URL" Grid.Row="4" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <TextBox x:Name="UrlBox" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Style="{StaticResource Field}"
+                                 ToolTip="Необязательно. Если задан, используется вместо host/port/database." />
+
+                        <TextBlock Text="Драйвер (.jar)" Grid.Row="5" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <TextBox x:Name="DriverBox" Grid.Row="5" Grid.Column="1" Style="{StaticResource Field}" />
+                        <Button Content="…" Grid.Row="5" Grid.Column="2" Margin="6,0,0,8" Click="BrowseDriver_Click" />
+
+                        <CheckBox x:Name="SidBox" Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                                  Content="Подключение по SID (Oracle)" Margin="0,0,0,8" />
+                    </Grid>
+                </StackPanel>
+
+                <StackPanel x:Name="SqlitePanel" Visibility="Collapsed">
+                    <TextBlock Text="Файл базы" Margin="0,0,0,2" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="SqliteBox" Style="{StaticResource Field}" />
+                        <Button Grid.Column="1" Content="…" Margin="6,0,0,8" Click="BrowseSqlite_Click" />
+                    </Grid>
+                </StackPanel>
+
+                <StackPanel x:Name="OraclePanel" Visibility="Collapsed">
+                    <TextBlock Text="Oracle" FontWeight="SemiBold" Margin="0,10,0,8" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Режим" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <ComboBox x:Name="OracleModeBox" Grid.Column="1" Style="{StaticResource FieldCombo}"
+                                  SelectionChanged="OracleMode_Changed">
+                            <ComboBoxItem Content="EZ Connect (host:port/service)" Tag="easy" />
+                            <ComboBoxItem Content="TNS (tnsnames.ora)" Tag="tns" />
+                            <ComboBoxItem Content="LDAP (ldap.ora)" Tag="ldap" />
+                        </ComboBox>
+
+                        <TextBlock x:Name="AliasLabel" Text="TNS-алиас" Grid.Row="1"
+                                   VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <TextBox x:Name="AliasBox" Grid.Row="1" Grid.Column="1" Style="{StaticResource Field}" />
+
+                        <TextBlock Text="TNS_ADMIN" Grid.Row="2" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <Grid Grid.Row="2" Grid.Column="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TnsAdminBox" Style="{StaticResource Field}" />
+                            <Button Grid.Column="1" Content="…" Margin="6,0,0,8" Click="BrowseTns_Click" />
+                        </Grid>
+
+                        <TextBlock Text="LDAP хост" Grid.Row="3" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <TextBox x:Name="LdapHostBox" Grid.Row="3" Grid.Column="1" Style="{StaticResource Field}" />
+
+                        <TextBlock Text="LDAP порт" Grid.Row="4" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <TextBox x:Name="LdapPortBox" Grid.Row="4" Grid.Column="1" Style="{StaticResource Field}" />
+
+                        <TextBlock Text="LDAP контекст" Grid.Row="5" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <TextBox x:Name="LdapContextBox" Grid.Row="5" Grid.Column="1" Style="{StaticResource Field}" />
+
+                        <CheckBox x:Name="LdapSslBox" Grid.Row="6" Grid.Column="1" Content="LDAP over SSL"
+                                  Margin="0,0,0,8" />
+                    </Grid>
+                </StackPanel>
+
+                <StackPanel x:Name="SshPanel">
+                    <TextBlock Text="SSH-туннель" FontWeight="SemiBold" Margin="0,10,0,8" />
+                    <CheckBox x:Name="SshEnabledBox" Content="Использовать SSH" Margin="0,0,0,8"
+                              Checked="Ssh_Changed" Unchecked="Ssh_Changed" />
+                    <Grid x:Name="SshFields">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="90" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Хост / алиас" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <TextBox x:Name="SshHostBox" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource Field}" />
+
+                        <TextBlock Text="Порт" Grid.Row="1" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <TextBox x:Name="SshPortBox" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Style="{StaticResource Field}" />
+
+                        <TextBlock Text="Пользователь" Grid.Row="2" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <TextBox x:Name="SshUserBox" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Style="{StaticResource Field}" />
+
+                        <TextBlock Text="Ключ" Grid.Row="3" VerticalAlignment="Center" Margin="0,0,8,8" />
+                        <TextBox x:Name="SshKeyBox" Grid.Row="3" Grid.Column="1" Style="{StaticResource Field}" />
+                        <Button Grid.Row="3" Grid.Column="2" Content="…" Margin="6,0,0,8" Click="BrowseKey_Click" />
+                    </Grid>
+                </StackPanel>
+
+                <TextBlock Text="Поведение" FontWeight="SemiBold" Margin="0,10,0,8" />
+                <CheckBox x:Name="ReadOnlyBox" Content="Только чтение (запретить редактирование данных)"
+                          Margin="0,0,0,6" />
+                <CheckBox x:Name="SavePasswordBox" Content="Сохранять пароль (DPAPI + Windows Hello)"
+                          Margin="0,0,0,6" />
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

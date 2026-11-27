@@ -1,0 +1,329 @@
+<Window x:Class="DBooyvol.App.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:DBooyvol.App.Controls"
+        xmlns:vm="clr-namespace:DBooyvol.App.ViewModels"
+        Title="DBooyvol" Height="820" Width="1280"
+        WindowStartupLocation="CenterScreen" PreviewKeyDown="Window_PreviewKeyDown">
+
+    <Window.Resources>
+        <HierarchicalDataTemplate DataType="{x:Type vm:ConnectionNode}" ItemsSource="{Binding Children}">
+            <StackPanel Orientation="Horizontal" Margin="0,1">
+                <TextBlock Text="{Binding Icon}" Width="16" Foreground="#2E7D32" />
+                <TextBlock Text="{Binding Label}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="FontWeight" Value="Normal" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsPrimary}" Value="True">
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </StackPanel>
+        </HierarchicalDataTemplate>
+
+        <DataTemplate x:Key="TabHeader">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
+                <TextBlock Text=" *" Foreground="#B25000" VerticalAlignment="Center"
+                           Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}" />
+                <Button Content="✕" Width="18" Height="18" Margin="8,0,0,0" Padding="0"
+                        FontSize="10" Click="CloseTab_Click" ToolTip="Закрыть вкладку" />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="TabContent">
+            <Grid Margin="0,4,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="3*" MinHeight="120" />
+                    <RowDefinition Height="5" />
+                    <RowDefinition Height="2*" MinHeight="120" />
+                </Grid.RowDefinitions>
+
+                <controls:SqlEditor Grid.Row="0"
+                                    Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    CaretOffset="{Binding CaretOffset, Mode=TwoWay}"
+                                    SelectionStart="{Binding SelectionStart, Mode=TwoWay}"
+                                    SelectionLength="{Binding SelectionLength, Mode=TwoWay}"
+                                    EditorFontSize="{Binding DataContext.EditorFontSize, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Loaded="Editor_Loaded"
+                                    ExecuteStatementRequested="Editor_ExecuteStatement"
+                                    ExecuteScriptRequested="Editor_ExecuteScript"
+                                    FormatRequested="Editor_Format"
+                                    CommentRequested="Editor_Comment"
+                                    CommentMarkerRequested="Editor_CommentMarker"
+                                    PreviousStatementRequested="Editor_PrevStatement"
+                                    NextStatementRequested="Editor_NextStatement" />
+
+                <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"
+                              Background="#E5E5E5" ResizeBehavior="PreviousAndNext" />
+
+                <Grid Grid.Row="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Background="#F7F7F7" BorderBrush="#E0E0E0" BorderThickness="0,1,0,1"
+                            Padding="6,3">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <Button Content="Ещё" Style="{StaticResource ToolButton}"
+                                        Click="Action_Click" Tag="result.fetchMore"
+                                        ToolTip="Загрузить ещё (Ctrl+Alt+N)" />
+                                <Button Content="Все" Style="{StaticResource ToolButton}"
+                                        Click="Action_Click" Tag="result.fetchAll"
+                                        ToolTip="Загрузить все (Ctrl+Shift+=)" />
+                                <Button Content="Применить" Style="{StaticResource ToolButton}"
+                                        Click="Action_Click" Tag="data.apply"
+                                        ToolTip="Сохранить изменения (Ctrl+S)" />
+                                <Button Content="Строка / таблица" Style="{StaticResource ToolButton}"
+                                        Click="Action_Click" Tag="toggleRow"
+                                        ToolTip="Tab" />
+                                <Button Content="Экспорт" Style="{StaticResource ToolButton}"
+                                        Click="Action_Click" Tag="result.exportMenu" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding Status}" VerticalAlignment="Center"
+                                       Foreground="#444444" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Error}" Margin="12,0,0,0" VerticalAlignment="Center"
+                                       Foreground="#B00020" TextTrimming="CharacterEllipsis"
+                                       Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
+                        </DockPanel>
+                    </Border>
+
+                    <Grid Grid.Row="1">
+                        <DataGrid x:Name="ResultsGrid"
+                                  ItemsSource="{Binding RowsView}"
+                                  AutoGenerateColumns="True"
+                                  IsReadOnly="{Binding IsEditable, Converter={StaticResource InverseBool}}"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  CanUserReorderColumns="True"
+                                  CanUserResizeColumns="True"
+                                  CanUserSortColumns="True"
+                                  SelectionMode="Extended"
+                                  SelectionUnit="FullRow"
+                                  HeadersVisibility="All"
+                                  RowHeaderWidth="48"
+                                  GridLinesVisibility="Horizontal"
+                                  HorizontalGridLinesBrush="#EEEEEE"
+                                  FontSize="{Binding DataContext.ResultFontSize, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  Visibility="{Binding IsGridVisible, Converter={StaticResource BoolToVis}}"
+                                  SelectionChanged="ResultsGrid_SelectionChanged"
+                                  LoadingRow="ResultsGrid_LoadingRow"
+                                  PreviewKeyDown="ResultsGrid_PreviewKeyDown"
+                                  AutoGeneratingColumn="ResultsGrid_AutoGeneratingColumn">
+                            <DataGrid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Копировать" Click="Copy_Click" Tag="txt" />
+                                    <MenuItem Header="Копировать как">
+                                        <MenuItem Header="CSV" Click="Copy_Click" Tag="csv" />
+                                        <MenuItem Header="HTML" Click="Copy_Click" Tag="html" />
+                                        <MenuItem Header="JSON" Click="Copy_Click" Tag="json" />
+                                        <MenuItem Header="Markdown" Click="Copy_Click" Tag="markdown" />
+                                        <MenuItem Header="SQL INSERT" Click="Copy_Click" Tag="sql" />
+                                        <MenuItem Header="Исходный код" Click="Copy_Click" Tag="source" />
+                                        <MenuItem Header="XML" Click="Copy_Click" Tag="xml" />
+                                        <MenuItem Header="DbUnit" Click="Copy_Click" Tag="dbunit" />
+                                    </MenuItem>
+                                    <Separator />
+                                    <MenuItem Header="Установить NULL" Click="GridAction_Click" Tag="null" />
+                                    <MenuItem Header="Сбросить ячейку" Click="GridAction_Click" Tag="reset" />
+                                    <Separator />
+                                    <MenuItem Header="Добавить строку" Click="GridAction_Click" Tag="add" />
+                                    <MenuItem Header="Дублировать строку" Click="GridAction_Click" Tag="duplicate" />
+                                    <MenuItem Header="Удалить строку" Click="GridAction_Click" Tag="delete" />
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
+                        </DataGrid>
+
+                        <ListView ItemsSource="{Binding SingleRowItems}"
+                                  Visibility="{Binding IsSingleRowVisible, Converter={StaticResource BoolToVis}}"
+                                  FontSize="{Binding DataContext.ResultFontSize, RelativeSource={RelativeSource AncestorType=Window}}">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Колонка" Width="260"
+                                                    DisplayMemberBinding="{Binding Title}" />
+                                    <GridViewColumn Header="Значение" Width="600">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Value, TargetNullValue=NULL}"
+                                                           TextWrapping="NoWrap">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="#222222" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Value}" Value="{x:Null}">
+                                                                    <Setter Property="Foreground" Value="#999999" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="Файл">
+                <MenuItem Header="Новый скрипт" Tag="file.newScript" Click="Action_Click" InputGestureText="Ctrl+]" />
+                <MenuItem Header="Открыть…" Tag="file.open" Click="Action_Click" InputGestureText="Ctrl+O" />
+                <MenuItem Header="Сохранить" Tag="file.save" Click="Action_Click" InputGestureText="Ctrl+S" />
+                <MenuItem Header="Сохранить как…" Tag="file.saveAs" Click="Action_Click" InputGestureText="Ctrl+Shift+S" />
+                <Separator />
+                <MenuItem Header="Экспорт CSV…" Tag="result.exportCsv" Click="Action_Click" InputGestureText="Ctrl+Alt+1" />
+                <MenuItem Header="Экспорт XML…" Tag="result.exportXml" Click="Action_Click" InputGestureText="Ctrl+Alt+2" />
+                <MenuItem Header="Экспорт XLSX…" Tag="result.exportXlsx" Click="Action_Click" InputGestureText="Ctrl+Alt+3" />
+                <Separator />
+                <MenuItem Header="Выход" Click="Exit_Click" />
+            </MenuItem>
+
+            <MenuItem Header="Правка">
+                <MenuItem Header="Найти" Tag="edit.find" Click="Action_Click" InputGestureText="Ctrl+F" />
+                <MenuItem Header="Комментировать" Tag="edit.comment" Click="Action_Click" InputGestureText="Ctrl+/" />
+                <MenuItem Header="Комментировать по маркеру" Tag="edit.commentMarker" Click="Action_Click" InputGestureText="Ctrl+Alt+/" />
+                <MenuItem Header="Форматировать SQL" Tag="sql.format" Click="Action_Click" InputGestureText="Ctrl+Shift+F" />
+                <MenuItem Header="Автодополнение" Tag="sql.completion" Click="Action_Click" InputGestureText="Ctrl+Space" />
+            </MenuItem>
+
+            <MenuItem Header="SQL">
+                <MenuItem Header="Выполнить" Tag="sql.executeStatement" Click="Action_Click" InputGestureText="Ctrl+Enter" />
+                <MenuItem Header="Выполнить весь скрипт" Tag="sql.executeScript" Click="Action_Click" InputGestureText="Alt+X" />
+                <MenuItem Header="Отменить запрос" Tag="sql.cancel" Click="Action_Click" InputGestureText="Ctrl+Shift+C" />
+                <Separator />
+                <MenuItem Header="Загрузить ещё" Tag="result.fetchMore" Click="Action_Click" InputGestureText="Ctrl+Alt+N" />
+                <MenuItem Header="Загрузить все" Tag="result.fetchAll" Click="Action_Click" InputGestureText="Ctrl+Shift+=" />
+                <MenuItem Header="Сохранить изменения" Tag="data.apply" Click="Action_Click" InputGestureText="Ctrl+S" />
+            </MenuItem>
+
+            <MenuItem Header="Подключение">
+                <MenuItem Header="Новое подключение…" Tag="file.newConnection" Click="Action_Click" InputGestureText="Ctrl+Shift+N" />
+                <MenuItem Header="Изменить…" Tag="connection.change" Click="Action_Click" InputGestureText="Ctrl+9" />
+                <MenuItem Header="Удалить" Tag="connection.delete" Click="Action_Click" />
+                <Separator />
+                <MenuItem Header="Подключиться" Tag="connection.connect" Click="Action_Click" InputGestureText="Alt+C" />
+                <MenuItem Header="Отключиться" Tag="connection.disconnect" Click="Action_Click" InputGestureText="Alt+D" />
+                <MenuItem Header="Обновить дерево" Tag="tree.refresh" Click="Action_Click" InputGestureText="F5" />
+            </MenuItem>
+
+            <MenuItem Header="Вид">
+                <MenuItem Header="История запросов" Tag="view.history" Click="Action_Click" InputGestureText="Alt+2" />
+                <MenuItem Header="Результат" Tag="view.results" Click="Action_Click" InputGestureText="Ctrl+6" />
+                <MenuItem Header="Настройки…" Tag="settings" Click="Action_Click" />
+                <MenuItem Header="Горячие клавиши…" Tag="help.shortcuts" Click="Action_Click" InputGestureText="F1" />
+                <MenuItem Header="Во весь экран" Tag="view.fullscreen" Click="Action_Click" InputGestureText="F11" />
+            </MenuItem>
+        </Menu>
+
+        <ToolBarTray DockPanel.Dock="Top">
+            <ToolBar>
+                <Button Content="Выполнить" Tag="sql.executeStatement" Click="Action_Click"
+                        ToolTip="Выполнить выделение или statement под курсором (Ctrl+Enter)" />
+                <Button Content="Скрипт" Tag="sql.executeScript" Click="Action_Click"
+                        ToolTip="Выполнить весь скрипт (Alt+X)" />
+                <Button Content="Стоп" Tag="sql.cancel" Click="Action_Click"
+                        ToolTip="Отменить запрос (Ctrl+Shift+C)" />
+                <Separator />
+                <Button Content="Формат" Tag="sql.format" Click="Action_Click"
+                        ToolTip="Форматировать SQL (Ctrl+Shift+F)" />
+                <Button Content="Комментарий" Tag="edit.comment" Click="Action_Click"
+                        ToolTip="Ctrl+/" />
+                <Separator />
+                <Button Content="Новая вкладка" Tag="tab.newQuery" Click="Action_Click"
+                        ToolTip="Ctrl+T" />
+                <Button Content="Подключиться" Tag="connection.connect" Click="Action_Click"
+                        ToolTip="Alt+C" />
+                <Button Content="История" Tag="view.history" Click="Action_Click"
+                        ToolTip="Alt+2" />
+            </ToolBar>
+        </ToolBarTray>
+
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock Text="{Binding ConnectionStatus}" />
+            </StatusBarItem>
+            <Separator />
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusText}" />
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <StackPanel Orientation="Horizontal">
+                    <ProgressBar Width="110" Height="12" IsIndeterminate="True" Margin="0,0,10,0"
+                                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Text="{Binding TimeZoneCode}" Foreground="#666666" />
+                </StackPanel>
+            </StatusBarItem>
+        </StatusBar>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260" MinWidth="190" MaxWidth="420" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <DockPanel Grid.Column="0" Background="#FAFAFA">
+                <Border DockPanel.Dock="Top" Padding="8,6" Background="#F0F0F0">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Content="+" Width="24" Padding="0" Click="Action_Click"
+                                    Tag="file.newConnection" ToolTip="Новое подключение" />
+                            <Button Content="✎" Width="24" Padding="0" Click="Action_Click"
+                                    Tag="connection.change" ToolTip="Изменить" />
+                            <Button Content="⟳" Width="24" Padding="0" Click="Action_Click"
+                                    Tag="tree.refresh" ToolTip="Обновить (F5)" />
+                        </StackPanel>
+                        <TextBlock Text="Подключения" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </DockPanel>
+                </Border>
+
+                <TreeView ItemsSource="{Binding Connections}"
+                          SelectedItemChanged="Tree_SelectedItemChanged"
+                          MouseDoubleClick="Tree_MouseDoubleClick"
+                          BorderThickness="0" Background="Transparent">
+                    <TreeView.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Открыть" Tag="object.open" Click="Action_Click" />
+                            <MenuItem Header="Подключиться" Tag="connection.connect" Click="Action_Click" />
+                            <MenuItem Header="Отключиться" Tag="connection.disconnect" Click="Action_Click" />
+                            <Separator />
+                            <MenuItem Header="Изменить…" Tag="connection.change" Click="Action_Click" />
+                            <MenuItem Header="Дублировать" Tag="connection.duplicate" Click="Action_Click" />
+                            <MenuItem Header="Удалить" Tag="connection.delete" Click="Action_Click" />
+                            <Separator />
+                            <MenuItem Header="Обновить" Tag="tree.refresh" Click="Action_Click" />
+                        </ContextMenu>
+                    </TreeView.ContextMenu>
+                    <TreeView.ItemContainerStyle>
+                        <Style TargetType="TreeViewItem">
+                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                            <Setter Property="Padding" Value="2,1" />
+                        </Style>
+                    </TreeView.ItemContainerStyle>
+                </TreeView>
+            </DockPanel>
+
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
+                          Background="#E5E5E5" ResizeBehavior="PreviousAndNext" />
+
+            <TabControl x:Name="MainTabs" Grid.Column="2" Margin="6,6,6,0"
+                        ItemsSource="{Binding Tabs}"
+                        SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
+                        ItemTemplate="{StaticResource TabHeader}"
+                        ContentTemplate="{StaticResource TabContent}" />
+        </Grid>
+    </DockPanel>
+</Window>

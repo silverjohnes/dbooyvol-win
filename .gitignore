@@ -1,0 +1,26 @@
+# Build output
+bin/
+obj/
+publish/
+artifacts/
+*.user
+*.suo
+.vs/
+
+# Generated runtime / sidecar
+runtime/jre/
+sidecar/build/
+sidecar/out/
+
+# Vendored JDBC drivers and locale packs are part of the product.
+!drivers/*.jar
+!resources/locales/**/Localizable.strings
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local test data
+.dev-data/
+*.db
+!tests/**/fixtures/*.db
