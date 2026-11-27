@@ -295,6 +295,7 @@ public static class GridClipboard
         foreach (var row in payload.Rows)
         {
             var values = row.Select(v => v is null ? "NULL" : "'" + v.Replace("'", "''") + "'");
+            // sast:allow DBY009 — это текст для буфера обмена, приложение его не исполняет.
             lines.Add($"INSERT INTO {table} ({columns}) VALUES ({string.Join(", ", values)});");
         }
         return string.Join("\n", lines);

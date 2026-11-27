@@ -71,11 +71,9 @@ public sealed class SidecarClient : IAsyncDisposable
                     $"Java не найдена: {_options.JavaPath}. Укажите путь в настройках или положите runtime рядом с приложением.",
                     lost: true);
 
-            var args = $"{_options.JvmArguments} -jar \"{_options.JarPath}\"";
             var psi = new ProcessStartInfo
             {
                 FileName = _options.JavaPath,
-                Arguments = args,
                 WorkingDirectory = _options.WorkingDirectory,
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -85,6 +83,10 @@ public sealed class SidecarClient : IAsyncDisposable
                 StandardOutputEncoding = new UTF8Encoding(false),
                 StandardErrorEncoding = new UTF8Encoding(false)
             };
+            foreach (var argument in ProcessArguments.Split(_options.JvmArguments))
+                psi.ArgumentList.Add(argument);
+            psi.ArgumentList.Add("-jar");
+            psi.ArgumentList.Add(_options.JarPath);
 
             var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
             process.Exited += (_, _) => OnProcessLost("Java-процесс завершился");
@@ -247,6 +249,54 @@ public sealed class SidecarClient : IAsyncDisposable
     {
         await StopAsync().ConfigureAwait(false);
         _startGate.Dispose();
+    }
+}
+
+internal static class ProcessArguments
+{
+    /// <summary>
+    /// Splits a JVM option string without ever handing it to a shell. Double
+    /// quotes group tokens; a backslash escapes the next character.
+    /// </summary>
+    public static IEnumerable<string> Split(string commandLine)
+    {
+        if (string.IsNullOrWhiteSpace(commandLine)) yield break;
+        var current = new StringBuilder();
+        var quoted = false;
+        var escaped = false;
+        var hasValue = false;
+        foreach (var c in commandLine)
+        {
+            if (escaped)
+            {
+                current.Append(c);
+                escaped = false;
+                hasValue = true;
+                continue;
+            }
+            if (c == '\\')
+            {
+                escaped = true;
+                continue;
+            }
+            if (c == '"')
+            {
+                quoted = !quoted;
+                hasValue = true;
+                continue;
+            }
+            if (char.IsWhiteSpace(c) && !quoted)
+            {
+                if (!hasValue) continue;
+                yield return current.ToString();
+                current.Clear();
+                hasValue = false;
+                continue;
+            }
+            current.Append(c);
+            hasValue = true;
+        }
+        if (hasValue) yield return current.ToString();
     }
 }
 

@@ -1123,6 +1123,7 @@ public final class Engine {
     private static Map<String, Integer> columnTypes(Connection c, String qualified) throws SQLException {
         Map<String, Integer> types = new HashMap<>();
         try (Statement st = c.createStatement();
+             // sast:allow DBY009 — qualified собран quoteIdentifier() из метаданных JDBC.
              ResultSet rs = st.executeQuery("SELECT * FROM " + qualified + " WHERE 1=0")) {
             ResultSetMetaData md = rs.getMetaData();
             for (int i = 1; i <= md.getColumnCount(); i++) {

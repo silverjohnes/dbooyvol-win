@@ -42,6 +42,8 @@ PostgreSQL / Oracle / ClickHouse / SQLite
 
 - `src/DBooyvol.Core` — модели, хранилища, протокол, SQL, экспорт, сочетания
   клавиш. Покрыт xUnit-тестами (60 тестов).
+- `tests/DBooyvol.Security.Tests` — SAST-гейт для .NET, Java-sidecar, JDBC,
+  DPAPI/AES-GCM, OpenSSH и CI (28 тестов, см. `docs/SAST.md`).
 - `src/DBooyvol.App` — WPF-оболочка: окна, ViewModel, AvalonEdit, DataGrid.
 - `sidecar/` — Java-исходники движка; собираются в `sidecar/build/sidecar.jar`.
 - `drivers/` — JDBC-драйверы и `sidecar.jar` из macOS-поставки.
@@ -117,7 +119,7 @@ CI `.github/workflows/build.yml` собирает, тестирует и упа�
 ## Проверено
 
 - `dotnet build` решения — успешно (кросс-сборка WPF).
-- `dotnet test` — 60/60.
+- `dotnet test` — 60/60 Core + 28/28 SAST.
 - Форматтер: 10 представительных запросов + идемпотентность.
 - Требует проверки на Windows: запуск окна, реальные JDBC-подключения,
   Windows Hello, DPI, установщик и подпись.

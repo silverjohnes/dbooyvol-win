@@ -794,6 +794,8 @@ public sealed class MainViewModel : ObservableObject
         var root = node.Root;
         if (!await root.EnsureConnectedAsync().ConfigureAwait(true)) return;
         var qualified = node.Path.Count >= 3 ? $"{node.Path[0]}.{node.Path[2]}" : node.Label;
+        // sast:allow DBY009 — qualified приходит из метаданных дерева sidecar,
+        // а не из свободного ввода; пользователь и так может выполнить любой SQL.
         var sql = $"SELECT * FROM {qualified}";
         var tab = NewTab(sql, root);
         await ExecuteTextAsync(tab, sql).ConfigureAwait(true);

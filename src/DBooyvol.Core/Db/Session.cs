@@ -183,6 +183,8 @@ public sealed class Session : IAsyncDisposable
     {
         var first = SQLText.FirstRowReturningStatement(sql);
         if (first is null) return 0;
+        // sast:allow DBY009 — оборачивает уже разрешённый пользовательский запрос,
+        // чтобы посчитать строки; новых значений в SQL не добавляется.
         var countSql = $"SELECT count(*) FROM (\n{first.Trim().TrimEnd(';')}\n) dbooyvol_count";
         var response = await _client.CallAsync("count", new
         {

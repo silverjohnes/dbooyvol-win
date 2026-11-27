@@ -24,3 +24,13 @@ Thumbs.db
 .dev-data/
 *.db
 !tests/**/fixtures/*.db
+
+# Secrets and signing material
+*.pfx
+*.p12
+*.pem
+*.key
+*.jks
+*.keystore
+.env
+secrets.json
