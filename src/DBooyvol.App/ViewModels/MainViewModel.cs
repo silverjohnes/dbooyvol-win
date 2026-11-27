@@ -679,6 +679,48 @@ public sealed class MainViewModel : ObservableObject
         return session;
     }
 
+    /// <summary>
+    /// Connects with the dialog's current values and disposes the session at
+    /// once. Nothing is saved: no profile, no password.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> TestConnectionAsync(Profile profile)
+    {
+        try
+        {
+            await Secrets.AuthenticateOnceAsync().ConfigureAwait(true);
+
+            string? password = null;
+            if (profile.Kind != "sqlite")
+            {
+                if (profile.SavePassword)
+                {
+                    try { password = Secrets.Get(profile.Id); }
+                    catch (SecretStoreException) { }
+                }
+                if (password is null)
+                {
+                    var dialog = new PasswordDialog(profile.DisplayName)
+                    {
+                        Owner = Application.Current.MainWindow
+                    };
+                    if (dialog.ShowDialog() != true) return (false, "Проверка отменена.");
+                    password = dialog.Password;
+                }
+            }
+
+            await using var session = await Session.ConnectAsync(Sidecar, profile, password)
+                .ConfigureAwait(true);
+            var driver = string.IsNullOrWhiteSpace(session.Driver)
+                ? ""
+                : $"\nДрайвер: {session.Driver}";
+            return (true, $"Подключение успешно.\nСервер: {session.ServerVersion}{driver}");
+        }
+        catch (Exception error)
+        {
+            return (false, error.Message);
+        }
+    }
+
     private Task<string?> ResolvePasswordAsync(Profile profile, bool prompt)
     {
         if (profile.SavePassword)
@@ -740,7 +782,10 @@ public sealed class MainViewModel : ObservableObject
     private void NewConnection()
     {
         var profile = new Profile { Name = "Новое подключение", Kind = "postgres" };
-        var dialog = new ConnectionDialog(profile, isNew: true) { Owner = Application.Current.MainWindow };
+        var dialog = new ConnectionDialog(profile, isNew: true, TestConnectionAsync)
+        {
+            Owner = Application.Current.MainWindow
+        };
         if (dialog.ShowDialog() != true) return;
         var profiles = ProfileStore.Load();
         profiles.Add(dialog.Profile);
@@ -753,7 +798,7 @@ public sealed class MainViewModel : ObservableObject
     {
         var node = SelectedConnection?.Root;
         if (node?.Profile is null) return;
-        var dialog = new ConnectionDialog(node.Profile.Clone(), isNew: false)
+        var dialog = new ConnectionDialog(node.Profile.Clone(), isNew: false, TestConnectionAsync)
         {
             Owner = Application.Current.MainWindow
         };

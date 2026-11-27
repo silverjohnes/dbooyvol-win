@@ -36,7 +36,31 @@ public partial class MainWindow : Window
         viewModel.FocusResultsRequested = () => ResultsGrid?.Focus();
         viewModel.ToggleFullscreenRequested = ToggleFullscreen;
 
+        ApplyGestures(TreeMenu);
         Closing += OnClosing;
+    }
+
+    /// <summary>Shows the current binding (including user overrides) in menus.</summary>
+    private void ApplyGestures(ItemsControl menu)
+    {
+        foreach (var item in menu.Items.OfType<MenuItem>())
+        {
+            if (item.Tag is string id && id.Length > 0
+                && _shortcuts.Action(id) is not null)
+            {
+                var spec = _shortcuts.Get(id);
+                item.InputGestureText = spec.IsEmpty ? "" : spec.Display;
+            }
+            ApplyGestures(item);
+        }
+    }
+
+    private void Tree_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is not DependencyObject source) return;
+        if (FindAncestor<TreeViewItem>(source) is not { } item) return;
+        item.IsSelected = true;
+        item.Focus();
     }
 
     private void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)

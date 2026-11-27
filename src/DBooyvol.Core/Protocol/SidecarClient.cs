@@ -85,6 +85,8 @@ public sealed class SidecarClient : IAsyncDisposable
             };
             foreach (var argument in ProcessArguments.Split(_options.JvmArguments))
                 psi.ArgumentList.Add(argument);
+            if (!string.IsNullOrWhiteSpace(_options.DriversDirectory))
+                psi.ArgumentList.Add("-Ddbooyvol.drivers=" + _options.DriversDirectory);
             psi.ArgumentList.Add("-jar");
             psi.ArgumentList.Add(_options.JarPath);
 

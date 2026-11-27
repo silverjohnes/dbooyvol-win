@@ -212,7 +212,7 @@ public static class ShortcutCatalog
         A("grid.resetCell", "Сбросить ячейку", new(Vk.Escape, ShortcutModifiers.None), ShortcutScope.Grid),
 
         // Connections / tree
-        A("connection.change", "Изменить подключение", new('9', ShortcutModifiers.Control), ShortcutScope.Editor),
+        A("connection.change", "Изменить подключение", new('9', ShortcutModifiers.Control), ShortcutScope.Tree),
         A("connection.rename", "Переименовать подключение", new(Vk.F2, ShortcutModifiers.None), ShortcutScope.Tree),
         A("connection.duplicate", "Дублировать подключение", new('D', ShortcutModifiers.Control | ShortcutModifiers.Alt | ShortcutModifiers.Shift), ShortcutScope.Tree),
         A("connection.connect", "Подключиться", new('C', ShortcutModifiers.Alt), ShortcutScope.Tree),

@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using DBooyvol.Core.Models;
 using DBooyvol.Core.Protocol;
 using DBooyvol.Core.Sql;
@@ -15,6 +16,7 @@ public sealed class Session : IAsyncDisposable
     private readonly SidecarClient _client;
     private readonly Profile _profile;
     private readonly Func<CancellationToken, Task<string?>>? _passwordProvider;
+    private SshTunnel? _tunnel;
     private string? _connId;
 
     public Profile Profile => _profile;
@@ -36,31 +38,59 @@ public sealed class Session : IAsyncDisposable
         CancellationToken ct = default)
     {
         var session = new Session(client, profile, passwordProvider);
-        await session.OpenAsync(password, ct).ConfigureAwait(false);
-        return session;
+        try
+        {
+            await session.OpenAsync(password, ct).ConfigureAwait(false);
+            return session;
+        }
+        catch
+        {
+            await session.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
     private async Task OpenAsync(string? password, CancellationToken ct)
     {
+        var target = _profile;
+        if (_profile.Ssh.Enabled && _profile.Kind != "sqlite")
+        {
+            if (_profile.Kind == "oracle" && _profile.OracleMode is "tns" or "ldap")
+                throw new InvalidOperationException(
+                    "SSH-туннель работает только с Oracle EZ Connect: укажите хост и порт.");
+
+            var sshDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh");
+            _tunnel = await SshTunnel.StartAsync(
+                _profile.Ssh, _profile.Host, _profile.EffectivePort, sshDirectory, ct: ct)
+                .ConfigureAwait(false);
+
+            target = _profile.Clone();
+            target.Host = "127.0.0.1";
+            target.Port = _tunnel.LocalPort;
+            target.JdbcUrl = RewriteUrl(_profile.JdbcUrl, _profile.Host, _profile.EffectivePort,
+                _tunnel.LocalPort);
+        }
+
         var parameters = new Dictionary<string, object?>
         {
-            ["kind"] = _profile.Kind,
-            ["host"] = _profile.Host,
-            ["port"] = _profile.EffectivePort,
-            ["database"] = _profile.Database,
-            ["user"] = _profile.User,
+            ["kind"] = target.Kind,
+            ["host"] = target.Host,
+            ["port"] = target.EffectivePort,
+            ["database"] = target.Database,
+            ["user"] = target.User,
             ["password"] = password,
-            ["driverPath"] = _profile.DriverPath,
-            ["url"] = _profile.JdbcUrl,
-            ["oracleSid"] = _profile.OracleSid,
-            ["oracleMode"] = _profile.OracleMode,
-            ["oracleAlias"] = _profile.OracleAlias,
-            ["tnsAdmin"] = _profile.TnsAdmin,
-            ["ldapHost"] = _profile.LdapHost,
-            ["ldapPort"] = _profile.LdapPort,
-            ["ldapContext"] = _profile.LdapContext,
-            ["ldapSsl"] = _profile.LdapSsl,
-            ["oracleAuthServices"] = _profile.OracleAuthServices
+            ["driverPath"] = target.DriverPath,
+            ["url"] = target.JdbcUrl,
+            ["oracleSid"] = target.OracleSid,
+            ["oracleMode"] = target.OracleMode,
+            ["oracleAlias"] = target.OracleAlias,
+            ["tnsAdmin"] = target.TnsAdmin,
+            ["ldapHost"] = target.LdapHost,
+            ["ldapPort"] = target.LdapPort,
+            ["ldapContext"] = target.LdapContext,
+            ["ldapSsl"] = target.LdapSsl,
+            ["oracleAuthServices"] = target.OracleAuthServices
         };
 
         var result = await _client.CallAsync("connect", parameters, ct).ConfigureAwait(false);
@@ -69,6 +99,18 @@ public sealed class Session : IAsyncDisposable
         ServerVersion = result?["serverVersion"]?.GetValue<string>() ?? "";
         Driver = result?["driver"]?.GetValue<string>() ?? "";
         ConnectedUser = result?["user"]?.GetValue<string>() ?? _profile.User;
+    }
+
+    /// <summary>
+    /// Points an explicit JDBC URL at the local end of the tunnel, keeping
+    /// every other parameter untouched.
+    /// </summary>
+    private static string RewriteUrl(string url, string host, int port, int localPort)
+    {
+        if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(host)) return url;
+        var remote = $"{host}:{port}";
+        return Regex.Replace(url, Regex.Escape(remote),
+            $"127.0.0.1:{localPort}", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     }
 
     private string RequireConnId() =>
@@ -294,6 +336,8 @@ public sealed class Session : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await DisconnectAsync().ConfigureAwait(false);
+        _tunnel?.Dispose();
+        _tunnel = null;
     }
 }
 

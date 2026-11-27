@@ -187,7 +187,8 @@ public final class Engine {
             if (message.contains("No suitable driver")) {
                 throw new SQLException(
                     "Не найден JDBC-драйвер для " + url
-                        + ". Укажите путь к jar в профиле подключения (файл должен существовать).",
+                        + ". Положите jar в папку drivers рядом с sidecar.jar"
+                        + " или укажите путь к нему в профиле подключения.",
                     e.getSQLState(), e.getErrorCode(), e);
             }
             if (message.contains("could not resolve the connect identifier")) {
@@ -322,32 +323,50 @@ public final class Engine {
         return best != null ? best : jars[0];
     }
 
-    /** Driver shipped next to sidecar.jar (PostgreSQL works out of the box). */    private static void loadBundled(String name) {
+    /**
+     * Directory with bundled driver jars. The app passes it as
+     * {@code -Ddbooyvol.drivers}; the fallbacks cover a hand-run sidecar.jar.
+     */
+    private static File driverDirectory() {
+        String configured = System.getProperty("dbooyvol.drivers");
+        if (configured != null && !configured.trim().isEmpty()) {
+            File d = new File(configured.trim());
+            if (d.isDirectory()) return d;
+        }
         try {
             File self = new File(Engine.class.getProtectionDomain().getCodeSource().getLocation().toURI());
             File dir = self.isDirectory() ? self : self.getParentFile();
-            if (dir == null) return;
-            File jar = new File(dir, name);
-            if (jar.exists()) loadDrivers(jar.getPath());
-        } catch (Exception ignored) { }
+            if (dir == null) return null;
+            File nested = new File(dir, "drivers");
+            return nested.isDirectory() ? nested : dir;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    /** Driver shipped in the drivers folder (PostgreSQL works out of the box). */
+    private static void loadBundled(String name) {
+        File dir = driverDirectory();
+        if (dir == null) return;
+        File jar = new File(dir, name);
+        if (!jar.exists()) return;
+        try { loadDrivers(jar.getPath()); } catch (Exception ignored) { }
     }
 
     /** Loads several bundled jars into one classloader, so a driver can see its
      *  logging or optional dependencies. Missing jars are skipped. */
     private static void loadBundledAll(String... names) {
-        try {
-            File self = new File(Engine.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-            File dir = self.isDirectory() ? self : self.getParentFile();
-            if (dir == null) return;
-            StringBuilder joined = new StringBuilder();
-            for (String name : names) {
-                File jar = new File(dir, name);
-                if (!jar.exists()) continue;
-                if (joined.length() > 0) joined.append(File.pathSeparator);
-                joined.append(jar.getPath());
-            }
-            if (joined.length() > 0) loadDrivers(joined.toString());
-        } catch (Exception ignored) { }
+        File dir = driverDirectory();
+        if (dir == null) return;
+        StringBuilder joined = new StringBuilder();
+        for (String name : names) {
+            File jar = new File(dir, name);
+            if (!jar.exists()) continue;
+            if (joined.length() > 0) joined.append(File.pathSeparator);
+            joined.append(jar.getPath());
+        }
+        if (joined.length() == 0) return;
+        try { loadDrivers(joined.toString()); } catch (Exception ignored) { }
     }
 
     /** Wrapper so drivers from an isolated classloader survive DriverManager lookups. */

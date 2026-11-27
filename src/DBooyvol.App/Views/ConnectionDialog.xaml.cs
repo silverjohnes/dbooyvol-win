@@ -9,11 +9,15 @@ namespace DBooyvol.App.Views;
 public partial class ConnectionDialog : Window
 {
     private string _lastKind = "postgres";
+    private readonly Func<Profile, Task<(bool Ok, string Message)>>? _tester;
 
-    public ConnectionDialog(Profile profile, bool isNew)
+    public ConnectionDialog(Profile profile, bool isNew,
+        Func<Profile, Task<(bool Ok, string Message)>>? tester = null)
     {
         InitializeComponent();
         Profile = profile;
+        _tester = tester;
+        TestButton.Visibility = tester is null ? Visibility.Collapsed : Visibility.Visible;
         Title = isNew ? "Новое подключение" : "Изменить подключение";
 
         NameBox.Text = profile.Name;
@@ -151,16 +155,48 @@ public partial class ConnectionDialog : Window
 
     private void Ok_Click(object sender, RoutedEventArgs e)
     {
+        if (!Collect()) return;
+        DialogResult = true;
+    }
+
+    private async void Test_Click(object sender, RoutedEventArgs e)
+    {
+        if (_tester is null || !Collect()) return;
+
+        TestButton.IsEnabled = false;
+        var original = TestButton.Content;
+        TestButton.Content = "Проверка…";
+        try
+        {
+            var (ok, message) = await _tester(Profile.Clone()).ConfigureAwait(true);
+            MessageBox.Show(this, message, "Тест подключения", MessageBoxButton.OK,
+                ok ? MessageBoxImage.Information : MessageBoxImage.Warning);
+        }
+        catch (Exception error)
+        {
+            MessageBox.Show(this, error.Message, "Тест подключения",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            TestButton.Content = original;
+            TestButton.IsEnabled = true;
+        }
+    }
+
+    /// <summary>Reads the form into <see cref="Profile"/>. Returns false on a validation error.</summary>
+    private bool Collect()
+    {
         var kind = CurrentKind;
         if (string.IsNullOrEmpty(kind))
         {
-            MessageBox.Show("Выберите тип базы данных.", "DBooyvol");
-            return;
+            MessageBox.Show(this, "Выберите тип базы данных.", "DBooyvol");
+            return false;
         }
         if (kind == "sqlite" && string.IsNullOrWhiteSpace(SqliteBox.Text))
         {
-            MessageBox.Show("Укажите файл базы SQLite.", "DBooyvol");
-            return;
+            MessageBox.Show(this, "Укажите файл базы SQLite.", "DBooyvol");
+            return false;
         }
 
         Profile.Name = NameBox.Text.Trim();
@@ -192,7 +228,6 @@ public partial class ConnectionDialog : Window
 
         if (string.IsNullOrWhiteSpace(Profile.Name))
             Profile.Name = string.IsNullOrWhiteSpace(Profile.Database) ? kind : Profile.Database;
-
-        DialogResult = true;
+        return true;
     }
 }

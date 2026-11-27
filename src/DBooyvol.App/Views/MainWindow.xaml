@@ -292,14 +292,16 @@
                 <TreeView ItemsSource="{Binding Connections}"
                           SelectedItemChanged="Tree_SelectedItemChanged"
                           MouseDoubleClick="Tree_MouseDoubleClick"
+                          PreviewMouseRightButtonDown="Tree_PreviewMouseRightButtonDown"
                           BorderThickness="0" Background="Transparent">
                     <TreeView.ContextMenu>
-                        <ContextMenu>
+                        <ContextMenu x:Name="TreeMenu">
                             <MenuItem Header="Открыть" Tag="object.open" Click="Action_Click" />
                             <MenuItem Header="Подключиться" Tag="connection.connect" Click="Action_Click" />
                             <MenuItem Header="Отключиться" Tag="connection.disconnect" Click="Action_Click" />
                             <Separator />
                             <MenuItem Header="Изменить…" Tag="connection.change" Click="Action_Click" />
+                            <MenuItem Header="Переименовать…" Tag="connection.rename" Click="Action_Click" />
                             <MenuItem Header="Дублировать" Tag="connection.duplicate" Click="Action_Click" />
                             <MenuItem Header="Удалить" Tag="connection.delete" Click="Action_Click" />
                             <Separator />

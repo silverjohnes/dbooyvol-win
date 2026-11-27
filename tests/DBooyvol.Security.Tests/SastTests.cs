@@ -199,6 +199,26 @@ public class SastTests
     }
 
     [Fact]
+    public void Bundled_drivers_are_reachable_from_the_sidecar()
+    {
+        var client = Repository.Read("src/DBooyvol.Core/Protocol/SidecarClient.cs");
+        Assert.Contains("-Ddbooyvol.drivers=", client, StringComparison.Ordinal);
+
+        var engine = Repository.Read("sidecar/src/main/java/silver/dbooyvol/Engine.java");
+        Assert.Contains("System.getProperty(\"dbooyvol.drivers\")", engine, StringComparison.Ordinal);
+        Assert.Contains("loadBundled(\"postgresql.jar\")", engine, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Ssh_tunnel_is_wired_into_sessions()
+    {
+        var session = Repository.Read("src/DBooyvol.Core/Db/Session.cs");
+        Assert.Contains("SshTunnel.StartAsync", session, StringComparison.Ordinal);
+        Assert.Contains("_tunnel?.Dispose()", session, StringComparison.Ordinal);
+        Assert.Contains("RewriteUrl", session, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Ci_runs_the_security_gate()
     {
         if (!Repository.Exists(".github/workflows/build.yml"))
