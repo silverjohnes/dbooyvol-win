@@ -1,0 +1,97 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Build sidecar
+        shell: pwsh
+        run: ./sidecar/build.ps1
+
+      - name: Restore
+        run: dotnet restore DBooyvol.sln
+
+      - name: Test Core
+        run: dotnet test tests/DBooyvol.Core.Tests/DBooyvol.Core.Tests.csproj -c Release --no-restore
+
+      - name: Test security (SAST)
+        run: dotnet test tests/DBooyvol.Security.Tests/DBooyvol.Security.Tests.csproj -c Release --no-restore
+
+      - name: Build app
+        run: dotnet build src/DBooyvol.App/DBooyvol.App.csproj -c Release --no-restore
+
+  package:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Build sidecar
+        shell: pwsh
+        run: ./sidecar/build.ps1
+
+      - name: Build private JRE
+        shell: pwsh
+        run: ./runtime/make-jlink.ps1
+
+      - name: Publish application
+        run: >
+          dotnet publish src/DBooyvol.App/DBooyvol.App.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=false -o publish
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Compile installer
+        shell: pwsh
+        run: iscc installer/DBooyvol.iss /DPublishDir=publish /DAppVersion=1.0.0
+
+      - name: Sign binaries (optional)
+        if: ${{ secrets.WINDOWS_CERT_PFX_BASE64 != '' }}
+        shell: pwsh
+        env:
+          PFX_BASE64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+          PFX_PASSWORD: ${{ secrets.WINDOWS_CERT_PFX_PASSWORD }}
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP "cert.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:PFX_BASE64))
+          $files = @("publish\DBooyvol.exe") + (Get-ChildItem build\installer\*.exe | ForEach-Object FullName)
+          foreach ($file in $files) {
+            & signtool sign /fd SHA256 /f $pfx /p $env:PFX_PASSWORD `
+              /tr http://timestamp.digicert.com /td SHA256 $file
+            if ($LASTEXITCODE -ne 0) { throw "signtool failed for $file" }
+          }
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: DBooyvol-win-x64
+          path: build/installer/*.exe
+          if-no-files-found: error
