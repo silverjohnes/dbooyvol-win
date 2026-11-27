@@ -670,8 +670,8 @@ public sealed class MainViewModel : ObservableObject
 
     public async Task<Session> CreateSessionAsync(Profile profile)
     {
-        var password = await ResolvePasswordAsync(profile, prompt: true).ConfigureAwait(true);
         await Secrets.AuthenticateOnceAsync().ConfigureAwait(true);
+        var password = await ResolvePasswordAsync(profile, prompt: true).ConfigureAwait(true);
         var session = await Session.ConnectAsync(Sidecar, profile, password,
             _ => GetStoredPasswordAsync(profile)).ConfigureAwait(true);
         ConnectionStatus = $"{profile.DisplayName}: {session.ServerVersion}";
